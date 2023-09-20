@@ -3,7 +3,6 @@ layout: page
 title: UC Techsperts
 ---
 
-[![GitHub Repo stars](https://img.shields.io/github/stars/nicolas-van/bootstrap-4-github-pages?style=social)](https://github.com/nicolas-van/bootstrap-4-github-pages)
 
 hello! We are Team 18555, The Unity Catholic High School Techsperts.
 
