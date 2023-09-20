@@ -5,7 +5,7 @@ title: UC Techsperts
 
 [![GitHub Repo stars](https://img.shields.io/github/stars/nicolas-van/bootstrap-4-github-pages?style=social)](https://github.com/nicolas-van/bootstrap-4-github-pages)
 
-hello!
+hello! We are Team 18555, The Unity Catholic High School Techsperts.
 
 * A full Bootstrap 4 theme usable both on Github Pages and with a standalone Jekyll.
 * Recompiles Bootstrap from SCSS files, which allows to customize Bootstrap's variables and use Bootstrap themes.
