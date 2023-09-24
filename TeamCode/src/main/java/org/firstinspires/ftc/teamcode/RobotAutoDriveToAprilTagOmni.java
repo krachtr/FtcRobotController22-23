@@ -134,7 +134,8 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         frontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftDrive.setDirection(DcMotor.Direction.REVERSE);
         rightDrive.setDirection(DcMotor.Direction.FORWARD);
-        backDrive.setDirection(DcMotor.Direction.FORWARD);
+        backDrive.setDirection(DcMotor.Direction.REVERSE);
+
 
         if (USE_WEBCAM)
             setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
