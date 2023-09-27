@@ -38,7 +38,6 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDir
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
@@ -104,7 +103,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
     private DcMotor backDrive = null;  //  Used to control the right back drive wheel
 
     private static final boolean USE_WEBCAM = true;  // Set true to use a webcam, or false for a phone camera
-    private static final int DESIRED_TAG_ID = -1;     // Choose the tag you want to approach or set to -1 for ANY tag.
+    private static final int DESIRED_TAG_ID = 10;     // Choose the tag you want to approach or set to -1 for ANY tag.
     private VisionPortal visionPortal;               // Used to manage the video source.
     private AprilTagProcessor aprilTag;              // Used for managing the AprilTag detection process.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
@@ -211,10 +210,10 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
      */
     public void moveRobot(double x, double y, double yaw) {
         // Calculate wheel powers.
-        double Front    =  -x -yaw;
-        double Right   =  y -yaw;
-        double Left     =  y +yaw;
-        double Back    =  -x +yaw;
+        double Front    =  y +yaw;
+        double Right   =  -x +yaw;
+        double Left     =  -x -yaw;
+        double Back    =  y -yaw;
 
         // Normalize wheel powers to be less than 1.0
         double max = Math.max(Math.abs(Front), Math.abs(Back));
@@ -254,7 +253,7 @@ public class RobotAutoDriveToAprilTagOmni extends LinearOpMode
         myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
 
         // Add a tag, without pose information, to the AprilTagLibrary.Builder.
-        myAprilTagLibraryBuilder.addTag(9, "Our Awesome Team Tag", 2, DistanceUnit.INCH);
+       // myAprilTagLibraryBuilder.addTag(9, "Our Awesome Team Tag", 2, DistanceUnit.INCH);
 
         // Build the AprilTag library and assign it to a variable.
         myAprilTagLibrary = myAprilTagLibraryBuilder.build();

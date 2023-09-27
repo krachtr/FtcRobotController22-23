@@ -34,7 +34,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
@@ -118,8 +117,9 @@ public class ConceptAprilTag extends LinearOpMode {
         // Get the AprilTagLibrary for the current season.
         myAprilTagLibraryBuilder.addTags(AprilTagGameDatabase.getCurrentGameTagLibrary());
 
+
         // Add a tag, without pose information, to the AprilTagLibrary.Builder.
-        myAprilTagLibraryBuilder.addTag(10, "Our Awesome Team Tag", 5, DistanceUnit.INCH);
+        //myAprilTagLibraryBuilder.addTag(10, "Our Awesome Team Tag", 5, DistanceUnit.INCH);
 
         // Build the AprilTag library and assign it to a variable.
         myAprilTagLibrary = myAprilTagLibraryBuilder.build();
