@@ -30,6 +30,7 @@ public class CrossDrive extends LinearOpMode {
         back.setDirection(DcMotorSimple.Direction.FORWARD);
 
         PositionTracker positionTracker = new PositionTracker();
+        PropDetector propDetector = new PropDetector(hardwareMap);
 
         waitForStart();
         if (opModeIsActive()) {
@@ -47,6 +48,11 @@ public class CrossDrive extends LinearOpMode {
                     telemetry.addData("FrontTicks0", positionTracker.getFrontTicks0());
                     telemetry.addData("FrontInMM", positionTracker.getFrontInMM());
                     telemetry.addData("ChangeInA", positionTracker.getChangeInA());
+                    telemetry.addData("", "");
+                    telemetry.addData("Zone", propDetector.getTargetZone(1));
+                    telemetry.addData("R1", propDetector.getLMeanSrc1());
+                    telemetry.addData("R2", propDetector.getLMeanSrc2());
+                    telemetry.addData("R3", propDetector.getLMeanSrc3());
 
 
                 }
