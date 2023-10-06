@@ -29,7 +29,7 @@ public class CrossDrive extends LinearOpMode {
         front.setDirection(DcMotorSimple.Direction.FORWARD);
         back.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        PositionTracker positionTracker = new PositionTracker();
+        Drive drive = new Drive();
         PropDetector propDetector = new PropDetector(hardwareMap);
 
         waitForStart();
@@ -37,26 +37,21 @@ public class CrossDrive extends LinearOpMode {
             // Put run blocks here.
             while (opModeIsActive()) {
                 drive(gamepad1.left_stick_x, gamepad1.left_stick_y, (gamepad1.right_trigger - gamepad1.left_trigger), 0.3);
-                if (gamepad1.a) {
-                    telemetry.addData("X", positionTracker.getFieldX());
-                    telemetry.addData("Y", positionTracker.getFieldY());
-                    telemetry.addData("A", positionTracker.getFieldA());
-                    telemetry.addData("Front", positionTracker.getfrontChangeInMM());
-                    telemetry.addData("Right", positionTracker.getRightChangeInMM());
-                    telemetry.addData("Back", positionTracker.getBackChangeInMM());
-                    telemetry.addData("Left", positionTracker.getLeftChangeInMM());
-                    telemetry.addData("FrontTicks0", positionTracker.getFrontTicks0());
-                    telemetry.addData("FrontInMM", positionTracker.getFrontInMM());
-                    telemetry.addData("ChangeInA", positionTracker.getChangeInA());
-                    telemetry.addData("", "");
-                    telemetry.addData("Zone", propDetector.getTargetZone(1));
-                    telemetry.addData("R1", propDetector.getLMeanSrc1());
-                    telemetry.addData("R2", propDetector.getLMeanSrc2());
-                    telemetry.addData("R3", propDetector.getLMeanSrc3());
-
+                if (gamepad1.a){
 
                 }
-                // Put loop blocks here.
+                telemetry.addData("X", drive.getFieldX());
+                telemetry.addData("Y", drive.getFieldY());
+                telemetry.addData("A", drive.getFieldA());
+                telemetry.addData("", "");
+                telemetry.addData("Zone", propDetector.getTargetZone(1));
+                telemetry.addData("", "");
+                telemetry.addData("RobotXErr", drive.getRobotXErr());
+                telemetry.addData("RobotYErr", drive.getRobotYErr());
+                telemetry.addData("AErr", drive.getAErr());
+                telemetry.addData("DirectToXAngle", drive.getDirectToXAngle());
+                telemetry.addData("getFieldXErr", drive.getFieldXErr());
+                telemetry.addData("getFieldYErr", drive.getFieldYErr());
                 telemetry.update();
             }
         }
