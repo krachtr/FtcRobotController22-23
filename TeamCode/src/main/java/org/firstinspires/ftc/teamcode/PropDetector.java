@@ -22,10 +22,6 @@ public class PropDetector extends OpenCvPipeline{
 
     boolean viewportPaused;
 
-    double lMeanSrc1;
-    double lMeanSrc2;
-    double lMeanSrc3;
-
     boolean findZone = false;
     int zone = 0;
     Mat mat;
@@ -72,14 +68,14 @@ public class PropDetector extends OpenCvPipeline{
         Core.meanStdDev(cropped2, meansrc2, stdsrc2);
         Core.meanStdDev(cropped3, meansrc3, stdsrc3);
 
-        lMeanSrc1 = meansrc1.get(0,0)[0];
-        double aMeanSrc1 = meansrc1.get(1,0)[0];
+        double lMeanSrc1 = meansrc1.get(0,0)[0];
+        //double aMeanSrc1 = meansrc1.get(1,0)[0];
         double bMeanSrc1 = meansrc1.get(2,0)[0];
-        lMeanSrc2 = meansrc2.get(0,0)[0];
-        double aMeanSrc2 = meansrc2.get(1,0)[0];
+        double lMeanSrc2 = meansrc2.get(0,0)[0];
+        //double aMeanSrc2 = meansrc2.get(1,0)[0];
         double bMeanSrc2 = meansrc2.get(2,0)[0];
-        lMeanSrc3 = meansrc3.get(0,0)[0];
-        double aMeanSrc3 = meansrc3.get(1,0)[0];
+        double lMeanSrc3 = meansrc3.get(0,0)[0];
+        //double aMeanSrc3 = meansrc3.get(1,0)[0];
         double bMeanSrc3 = meansrc3.get(2,0)[0];
 
         //double lStdSrc = stdsrc1.get(0,0)[0];
@@ -158,57 +154,4 @@ public class PropDetector extends OpenCvPipeline{
             webcam.resumeViewport();
         }
     }
-
-    public Double getLMeanSrc1(){
-        return lMeanSrc1;
-    }
-    public Double getLMeanSrc2(){
-        return lMeanSrc2;
-    }
-    public Double getLMeanSrc3(){
-        return lMeanSrc3;
-    }
-
-    /*class SamplePipeline extends OpenCvPipeline
-    {
-        boolean viewportPaused;
-
-        @Override
-        public Mat processFrame(Mat input)
-        {
-            if(findZone){
-                findTargetZone(input);
-            }
-            Imgproc.rectangle(
-                input,
-                new Point(
-                        65,
-                        90),
-                new Point(
-                        135,
-                        160),
-                new Scalar(0, 255, 0), 4);
-
-
-
-            return input;
-        }
-
-        @Override
-        public void onViewportTapped()
-        {
-
-
-            viewportPaused = !viewportPaused;
-
-            if(viewportPaused)
-            {
-                webcam.pauseViewport();
-            }
-            else
-            {
-                webcam.resumeViewport();
-            }
-        }
-    }*/
 }
