@@ -70,7 +70,7 @@ public class Drive extends Thread{
         double changeInA;
 
         //distens ditwean to wheel / 2 and convrted to mm
-        final double distanceFromCenterToWheel = 13.5 / 2 * 25.4 * 1.08666666667;
+        final double distanceFromCenterToWheel = 13.5 / 2 * 25.4 / 0.88062622;
 
         Timer timer = new Timer();
         while (true){
