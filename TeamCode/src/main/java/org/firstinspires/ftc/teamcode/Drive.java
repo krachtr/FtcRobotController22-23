@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import java.util.Timer;
-
 public class Drive extends Thread{
     double fieldX = 0;
     double fieldY = 0;
@@ -15,9 +13,9 @@ public class Drive extends Thread{
     double robotYErr1 = 0;
     double AErr1 = 0;
 
-    double robotXErr0;
-    double robotYErr0;
-    double AErr0;
+    double robotXErr0 = 0;
+    double robotYErr0 = 0;
+    double AErr0 = 0;
 
     double Vx;
     double Vy;
@@ -27,6 +25,19 @@ public class Drive extends Thread{
 
     double fieldXErr;
     double fieldYErr;
+
+    double time0;
+    double time1 = 0;
+
+    double iXer = 0;
+    double iYer = 0;
+    double iAer = 0;
+
+    double dXer;
+    double dYer;
+
+    double dAer;
+
 
     Drive(){
 
@@ -70,9 +81,8 @@ public class Drive extends Thread{
         double changeInA;
 
         //distens ditwean to wheel / 2 and convrted to mm
-        final double distanceFromCenterToWheel = 13.5 / 2 * 25.4 * 1.08666666667;
+        final double distanceFromCenterToWheel = 13.5 / 2 * 25.4 / 0.88062622;
 
-        Timer timer = new Timer();
         while (true){
             //step 2
             frontTicks0 = frontTicks1;
@@ -109,6 +119,7 @@ public class Drive extends Thread{
                 fieldA -= 360;
             }
             calcErr(0,0,0);
+            calcXYAWithPID();
         }
     }
     public void calcErr(double X, double Y, double A){
@@ -118,7 +129,13 @@ public class Drive extends Thread{
 
         double directErr = Math.sqrt(Math.pow(fieldXErr, 2) + Math.pow(fieldYErr, 2));
 
-        directToXAngle = Math.atan(fieldYErr/fieldXErr);
+        if (fieldXErr != 0) {
+            directToXAngle = Math.atan(fieldYErr / fieldXErr);
+        } else if (fieldYErr >= 0){
+            directToXAngle = Math.toRadians(90);
+        } else {
+            directToXAngle = Math.toRadians(-90);
+        }
         if (fieldXErr < 0 && fieldYErr < 0){
             directToXAngle -= Math.toRadians(180);
         } else if (fieldXErr < 0 && fieldYErr >= 0) {
@@ -127,9 +144,10 @@ public class Drive extends Thread{
 
         robotXErr = Math.cos(directToXAngle - fieldA) * directErr;
         robotYErr = Math.sin(directToXAngle - fieldA) * directErr;
+
     }
 
-    public void celcXYAWithPID(double X, double Y, double A){
+    public void calcXYAWithPID(){
         final double KPx = .1;
         final double KPy = .1;
         final double KPa = .1;
@@ -139,6 +157,13 @@ public class Drive extends Thread{
         final double KDx = 0;
         final double KDy = 0;
         final double KDa = 0;
+
+        if (time1 != 0) {
+            time0 = time1;
+        } else {
+            time0 = System.currentTimeMillis();
+        }
+        time1 = System.currentTimeMillis();
 
         if (robotXErr1 != 0 && robotYErr1 != 0 && AErr1 != 0) {
             robotXErr0 = robotXErr1;
@@ -153,9 +178,18 @@ public class Drive extends Thread{
         robotYErr1 = robotYErr;
         AErr1 = AErr;
 
-        //System.out.println(Timer.getTime);
 
-        Vx = KPx * (robotXErr) + KIx *  0 + KDx;
+        iXer += (robotXErr1 + robotXErr0) / 2 * (time1 - time0);
+        dXer = (robotXErr1 - robotXErr0) / (time1 - time0);
+        Vx = KPx * robotXErr + KIx * iXer + KDx * dXer;
+
+        iYer += (robotYErr1 + robotYErr0) / 2 * (time1 - time0);
+        dYer = (robotYErr1 - robotYErr0) / (time1 - time0);
+        Vy = KPy * robotYErr + KIy * iYer + KDy * dYer;
+
+        iAer += (AErr1 + AErr0) / 2 * (time1 - time0);
+        dAer = (AErr1 - AErr0) / (time1 - time0);
+        Va = KPa * AErr + KIa * iAer + KDa * dAer;
     }
 
     public double getFieldX() {
@@ -184,6 +218,21 @@ public class Drive extends Thread{
     }
     public double getFieldYErr(){
         return fieldYErr / 25.4;
+    }
+    public double getVx(){
+        return Vx;
+    }
+    public double getVy(){
+        return Vy;
+    }
+    public double getVa(){
+        return Va;
+    }
+    public double getIXer(){
+        return iXer;
+    }
+    public double getDXer(){
+        return dXer;
     }
 
 }
