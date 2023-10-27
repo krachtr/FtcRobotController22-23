@@ -1,15 +1,15 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp
+@Autonomous
 
-public class CrossDrive extends LinearOpMode {
+public class AutoDrive extends LinearOpMode {
     public static DcMotor left;
     public static DcMotor right;
     public static DcMotor front;
@@ -53,16 +53,16 @@ public class CrossDrive extends LinearOpMode {
         pixel2.setDirection(CRServo.Direction.FORWARD);
 
         Drive drive = new Drive();
-        //PropDetector propDetector = new PropDetector(hardwareMap);
+        PropDetector propDetector = new PropDetector(hardwareMap);
 
         waitForStart();
         if (opModeIsActive()) {
             // Put run blocks here.
             while (opModeIsActive()) {
-                //if (gamepad1.a){
-                //    move(drive.getVx(), -drive.getVy(), drive.getVa(), 0.3);
-                //} else {
-                if ((-gamepad1.right_stick_y) >= 0 || arm.getCurrentPosition() > 0) {
+                if (gamepad1.a){
+                    move(drive.getVx(), -drive.getVy(), drive.getVa(), 0.3);
+                } else {
+                /*if ((-gamepad1.right_stick_y) >= 0 || arm.getCurrentPosition() > 0) {
                     arm.setPower(-gamepad1.right_stick_y);
                 } else {
                     arm.setPower(0);
@@ -85,14 +85,14 @@ public class CrossDrive extends LinearOpMode {
                     shooter.setPosition(.5);
                 } else {
                     shooter.setPosition(0);
+                }*/
+                move(gamepad1.left_stick_x, gamepad1.left_stick_y, (gamepad1.right_trigger - gamepad1.left_trigger), .7);
                 }
-                move(gamepad1.left_stick_x, gamepad1.left_stick_y, (gamepad1.right_trigger - gamepad1.left_trigger), .5);
-                //}
                 telemetry.addData("X", drive.getFieldX());
                 telemetry.addData("Y", drive.getFieldY());
                 telemetry.addData("A", drive.getFieldA());
                 telemetry.addData("", "");
-                //telemetry.addData("Zone", propDetector.getTargetZone(1));
+                telemetry.addData("Zone", propDetector.getTargetZone(1));
                 telemetry.addData("", "");
                 telemetry.addData("RobotXErr", drive.getRobotXErr());
                 telemetry.addData("RobotYErr", drive.getRobotYErr());

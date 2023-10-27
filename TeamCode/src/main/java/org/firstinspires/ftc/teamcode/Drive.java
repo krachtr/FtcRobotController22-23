@@ -38,6 +38,10 @@ public class Drive extends Thread{
 
     double dAer;
 
+    double VA0 = 0;
+    double VX0 = 0;
+    double VY0 = 0;
+
 
     Drive(){
 
@@ -115,8 +119,10 @@ public class Drive extends Thread{
             fieldX += changeInFieldX;
             fieldY += changeInFieldY;
             fieldA += changeInA;
-            if (fieldA >= 360){
-                fieldA -= 360;
+            if(fieldA > Math.toRadians(180)){
+                fieldA -= Math.toRadians(360);
+            } else if (fieldA < -Math.toRadians(180)) {
+                fieldA += Math.toRadians(360);
             }
             calcErr(0,0,0);
             calcXYAWithPID();
@@ -148,9 +154,9 @@ public class Drive extends Thread{
     }
 
     public void calcXYAWithPID(){
-        final double KPx = .1;
-        final double KPy = .1;
-        final double KPa = .1;
+        final double KPx = .004;
+        final double KPy = .004;
+        final double KPa = 1;
         final double KIx = 0;
         final double KIy = 0;
         final double KIa = 0;
@@ -183,13 +189,16 @@ public class Drive extends Thread{
         dXer = (robotXErr1 - robotXErr0) / (time1 - time0);
         Vx = KPx * robotXErr + KIx * iXer + KDx * dXer;
 
+
         iYer += (robotYErr1 + robotYErr0) / 2 * (time1 - time0);
         dYer = (robotYErr1 - robotYErr0) / (time1 - time0);
         Vy = KPy * robotYErr + KIy * iYer + KDy * dYer;
 
+
         iAer += (AErr1 + AErr0) / 2 * (time1 - time0);
         dAer = (AErr1 - AErr0) / (time1 - time0);
         Va = KPa * AErr + KIa * iAer + KDa * dAer;
+
     }
 
     public double getFieldX() {
@@ -226,7 +235,7 @@ public class Drive extends Thread{
         return Vy;
     }
     public double getVa(){
-        return Va;
+        return -Va;
     }
     public double getIXer(){
         return iXer;

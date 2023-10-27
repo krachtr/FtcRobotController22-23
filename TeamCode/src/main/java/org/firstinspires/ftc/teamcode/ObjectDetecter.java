@@ -21,6 +21,7 @@
 
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
@@ -44,6 +45,7 @@ import org.openftc.easyopencv.OpenCvWebcam;
 
 
 @TeleOp
+@Disabled
 public class ObjectDetecter extends LinearOpMode
 {
     OpenCvWebcam webcam;
