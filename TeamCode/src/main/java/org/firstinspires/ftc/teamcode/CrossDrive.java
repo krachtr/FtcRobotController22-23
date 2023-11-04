@@ -53,7 +53,7 @@ public class CrossDrive extends LinearOpMode {
         pixel2.setDirection(CRServo.Direction.FORWARD);
 
         Drive drive = new Drive();
-        //PropDetector propDetector = new PropDetector(hardwareMap);
+        PropDetector propDetector = new PropDetector(hardwareMap);
 
         waitForStart();
         if (opModeIsActive()) {
@@ -92,7 +92,7 @@ public class CrossDrive extends LinearOpMode {
                 telemetry.addData("Y", drive.getFieldY());
                 telemetry.addData("A", drive.getFieldA());
                 telemetry.addData("", "");
-                //telemetry.addData("Zone", propDetector.getTargetZone(1));
+                telemetry.addData("Zone", propDetector.getTargetZone(0));
                 telemetry.addData("", "");
                 telemetry.addData("RobotXErr", drive.getRobotXErr());
                 telemetry.addData("RobotYErr", drive.getRobotYErr());

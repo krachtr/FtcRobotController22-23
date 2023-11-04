@@ -27,6 +27,7 @@ public class StraightTest extends LinearOpMode {
 
         Trajectory trajectory = drive.trajectoryBuilder(new Pose2d())
                 .forward(DISTANCE)
+                //.lineTo(new Vector2d(DISTANCE,DISTANCE))
                 .build();
 
         waitForStart();
