@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
@@ -10,6 +11,7 @@ import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 
 
 @Autonomous(name="test", group = "tests")
+@Disabled
 public class roadrunerstraghtest extends LinearOpMode {
     @Override
     public void runOpMode() {
@@ -25,7 +27,14 @@ public class roadrunerstraghtest extends LinearOpMode {
 
         //drive.setPoseEstimate(new Pose2d(61, 9, Math.toRadians(135)));
         TrajectorySequence ts = drive.trajectorySequenceBuilder(startpose)
-                .strafeTo(new Vector2d(40, 15))
+                .strafeTo(new Vector2d(40, 9))
+                .addDisplacementMarker(() -> {
+                            // This marker runs after the first splineTo()
+                            drive.setPoseEstimate(new Pose2d(40,15,Math.toRadians(135)));
+                            // Run your action in here!
+                        }
+                )
+                .strafeTo(new Vector2d(19, 9))
                 .build();
 
         //Trajectory trajectory = drive.trajectoryBuilder(startpose)

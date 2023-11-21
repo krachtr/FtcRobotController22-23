@@ -33,12 +33,17 @@ import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
 import org.firstinspires.ftc.vision.VisionPortal;
@@ -46,7 +51,11 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import org.openftc.easyopencv.OpenCvCamera;
+import org.openftc.easyopencv.OpenCvCameraFactory;
+import org.openftc.easyopencv.OpenCvCameraRotation;
 
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -86,6 +95,10 @@ import java.util.concurrent.TimeUnit;
 
 public class AutoMeat1 extends LinearOpMode
 {
+    public CRServo pixel2;
+    public CRServo pixel1;
+
+
     // Adjust these numbers to suit your robot.
     final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
 
@@ -111,7 +124,47 @@ public class AutoMeat1 extends LinearOpMode
     private AprilTagProcessor aprilTag;              // Used for managing the AprilTag detection process.
     private AprilTagDetection desiredTag = null;     // Used to hold the data for a detected AprilTag
 
+    //for cam
+    OpenCvCamera camera;
+    AprilTagDetectionPipeline aprilTagDetectionPipeline;
+
+    static final double FEET_PER_METER = 3.28084;
+
+    // Lens intrinsics
+    // UNITS ARE PIXELS
+    // NOTE: this calibration is for the C920 webcam at 800x448.
+    // You will need to do your own calibration for other configurations!
+    double fx = 578.272;
+    double fy = 578.272;
+    double cx = 402.145;
+    double cy = 221.506;
+
+    // UNITS ARE METERS
+    double tagsize = 0.166;
+
+    int ID_TAG_OF_INTEREST = 7; // Tag ID 18 from the 36h11 family
+
+    org.openftc.apriltag.AprilTagDetection tagOfInterest = null;
+
+    public static DcMotor arm;
+
+
+
+
+
     @Override public void runOpMode() throws InterruptedException {
+        pixel2 = hardwareMap.get(CRServo.class, "pixel2");
+        pixel2.setDirection(CRServo.Direction.FORWARD);
+        pixel1 = hardwareMap.get(CRServo.class, "pixel1");
+        pixel1.setDirection(CRServo.Direction.REVERSE);
+
+        arm = hardwareMap.get(DcMotor.class, "arm");
+
+        arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //arm.setTargetPosition(0);
+        arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        arm.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         int program = 1;
         if (program == 1) {
             telemetry.addData("sulect a starting position whith the dPad: ", "blue left");
@@ -177,62 +230,175 @@ public class AutoMeat1 extends LinearOpMode
 
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 
-        Pose2d startpose = new Pose2d(61,9,Math.toRadians(135));
-        Pose2d startpose2 = new Pose2d(33,15,Math.toRadians(135));
-        drive.setPoseEstimate(startpose);
+        Pose2d startposerr = new Pose2d(61,12,Math.toRadians(135));
+        Pose2d startpose1rr = new Pose2d(38, 7,Math.toRadians(180));
+        Pose2d startpose2rr = new Pose2d(32.5, 18,Math.toRadians(135));
+        Pose2d startpose3rr = new Pose2d(42, 23, Math.toRadians(125));
 
-        TrajectorySequence redRight1p1 = drive.trajectorySequenceBuilder(startpose)
-                .strafeTo(new Vector2d(33, 9))
-                // .addDisplacementMarker(() -> {
-                            // This marker runs after the first splineTo()
+        Pose2d startposerr2 = new Pose2d(36, 36, Math.toRadians(45));
+        Pose2d startposebl2 = new Pose2d(-36, 36, Math.toRadians(45));
 
-                            // Run your action in here!
-                //        }
-                //)
+        Pose2d startposebl = new Pose2d(-61,12,Math.toRadians(-45));
+        Pose2d startpose1bl = new Pose2d(-42, 23, Math.toRadians(-45));
+        Pose2d startpose2bl  = new Pose2d(-32.5, 18,Math.toRadians(-45));
+        Pose2d startpose3bl = new Pose2d(-38, 7,Math.toRadians(-105));
+
+        Pose2d startposebr = new Pose2d(61,12,Math.toRadians(135));
+        Pose2d startpose1br = new Pose2d(38, 7,Math.toRadians(180));
+        Pose2d startpose2br  = new Pose2d(32.5, 18,Math.toRadians(135));
+        Pose2d startpose3br = new Pose2d(42, 23, Math.toRadians(125));
+
+        Pose2d startposerl = new Pose2d(61,12,Math.toRadians(135));
+        Pose2d startpose1rl = new Pose2d(38, 7,Math.toRadians(180));
+        Pose2d startpose2rl  = new Pose2d(32.5, 18,Math.toRadians(135));
+        Pose2d startpose3rl = new Pose2d(42, 23, Math.toRadians(125));
+
+        if (program == 1) {
+            // blue left
+            drive.setPoseEstimate(startposebl);
+        } else if (program == 2) {
+            // blue right
+            drive.setPoseEstimate(startposerr);
+        } else if (program == 3) {
+            // red left
+            drive.setPoseEstimate(startposebl);
+        } else {
+            // red right
+            drive.setPoseEstimate(startposerr);
+        }
+
+        TrajectorySequence redRight1p1 = drive.trajectorySequenceBuilder(startposerr)
+                .strafeTo(new Vector2d(44, 9))
+                .splineToSplineHeading(new Pose2d(38, 7, Math.toRadians(180)), Math.toRadians(180))
+                .addTemporalMarker(3, () -> {
+                    // This marker runs two seconds into the trajectory
+                    pixel2.setPower(1);
+                    // Run your action in here!
+                })
 
                 //.strafeTo(new Vector2d(36, 9))
                 //.splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
                 //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
                 .build();
-        TrajectorySequence redRight1p2 = drive.trajectorySequenceBuilder(startpose)
-                .strafeTo(new Vector2d(36, 9))
+        TrajectorySequence redRight1p2 = drive.trajectorySequenceBuilder(startpose1rr)
+                .strafeTo(new Vector2d(40, 11))
                 .splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
-                .splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .splineToSplineHeading(new Pose2d(36, 36, Math.toRadians(45)), Math.toRadians(90))
                 .build();
-        TrajectorySequence redRight2p1 = drive.trajectorySequenceBuilder(startpose)
-                .strafeTo(new Vector2d(33, 15))
-                //.addDisplacementMarker(() -> {
-                            // This marker runs after the first splineTo()
-
-                            // Run your action in here!
-                //        }
-                //)
+        TrajectorySequence redRight2p1 = drive.trajectorySequenceBuilder(startposerr)
+                .strafeTo(new Vector2d(32.5, 18))
+                .addDisplacementMarker(20, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    pixel2.setPower(1);
+                    // Run your action in here!
+                })
                 //.strafeTo(new Vector2d(43, 12))
                 //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
                 //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
                 .build();
-        TrajectorySequence redRight2p2 = drive.trajectorySequenceBuilder(startpose2)
-                .strafeTo(new Vector2d(43, 12))
-                .splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
-                .splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
-                .build();
-        TrajectorySequence redRight3p1 = drive.trajectorySequenceBuilder(startpose)
-                .strafeTo(new Vector2d(58, 9))
-                .splineToConstantHeading(new Vector2d(48, 24), Math.toRadians(90))
-                .addDisplacementMarker(() -> {
-                            // This marker runs after the first splineTo()
+        TrajectorySequence redRight2p2 = drive.trajectorySequenceBuilder(startpose2rr)
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
 
-                            // Run your action in here!
-                        }
-                )
+                .strafeTo(new Vector2d(35, 20.5))
+                .splineToSplineHeading(new Pose2d(36, 36, Math.toRadians(45)), Math.toRadians(135))
+                .build();
+        TrajectorySequence redRight3p1 = drive.trajectorySequenceBuilder(startposerr)
+                .strafeTo(new Vector2d(58, 15))
+                .splineToConstantHeading(new Vector2d(42, 23), Math.toRadians(90))
+                .addDisplacementMarker(15, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    pixel2.setPower(1);
+                    // Run your action in here!
+                })
                 //.strafeTo(new Vector2d(51, 24))
                 //.splineToConstantHeading(new Vector2d(50, 30), Math.toRadians(175))
                 //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
                 .build();
-        TrajectorySequence redRight3p2 = drive.trajectorySequenceBuilder(startpose)
-                .strafeTo(new Vector2d(51, 24))
-                .splineToConstantHeading(new Vector2d(50, 30), Math.toRadians(175))
-                .splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+        TrajectorySequence redRight3p2 = drive.trajectorySequenceBuilder(startpose3rr)
+                .strafeTo(new Vector2d(45, 25))
+                //.splineToConstantHeading(new Vector2d(46, 28), Math.toRadians(175))
+                .splineToSplineHeading(new Pose2d(36, 36, Math.toRadians(45)), Math.toRadians(180))
+                .build();
+
+
+
+
+        TrajectorySequence blueLeft1p1 = drive.trajectorySequenceBuilder(startposebl)
+                .strafeTo(new Vector2d(-58, 15))
+                .splineToConstantHeading(new Vector2d(-42, 23), Math.toRadians(90))
+                .addDisplacementMarker(15, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    pixel2.setPower(1);
+                    // Run your action in here!
+                })
+
+                //.strafeTo(new Vector2d(36, 9))
+                //.splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+        TrajectorySequence blueLeft1p2 = drive.trajectorySequenceBuilder(startpose1bl)
+                .strafeTo(new Vector2d(-45, 25))
+                //.splineToConstantHeading(new Vector2d(46, 28), Math.toRadians(175))
+                .splineToSplineHeading(new Pose2d(-36, 36, Math.toRadians(45)), Math.toRadians(0))
+                .build();
+        TrajectorySequence blueLeft2p1 = drive.trajectorySequenceBuilder(startposebl)
+                .strafeTo(new Vector2d(-32.5, 18))
+                .addDisplacementMarker(20, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    pixel2.setPower(1);
+                    // Run your action in here!
+                })
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+        TrajectorySequence blueLeft2p2 = drive.trajectorySequenceBuilder(startpose2bl)
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+
+                .strafeTo(new Vector2d(-35, 20.5))
+                .splineToSplineHeading(new Pose2d(-36, 36, Math.toRadians(45)), Math.toRadians(45))
+                .build();
+        TrajectorySequence blueLeft3p1 = drive.trajectorySequenceBuilder(startposebl)
+                .strafeTo(new Vector2d(-44, 9))
+                .splineToSplineHeading(new Pose2d(-38, 7, Math.toRadians(-105)), Math.toRadians(180))
+                .addTemporalMarker(3, () -> {
+                    // This marker runs two seconds into the trajectory
+                    pixel2.setPower(1);
+                    // Run your action in here!
+                })
+                .build();
+        TrajectorySequence blueLeft3p2 = drive.trajectorySequenceBuilder(startpose3bl)
+                .strafeTo(new Vector2d(-40, 11))
+                .splineToConstantHeading(new Vector2d(-41, 14), Math.toRadians(90))
+                .splineToSplineHeading(new Pose2d(-36, 36, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+
+        TrajectorySequence redRight1p3 = drive.trajectorySequenceBuilder(startposerr2)
+                .strafeTo(new Vector2d(30, 50))
+                .build();
+
+        TrajectorySequence blueLeft1p3 = drive.trajectorySequenceBuilder(startposebl2)
+                .strafeTo(new Vector2d(-42, 50))
+                .build();
+
+        TrajectorySequence redRight2p3 = drive.trajectorySequenceBuilder(startposerr2)
+                .strafeTo(new Vector2d(36, 50))
+                .build();
+
+        TrajectorySequence blueLeft2p3 = drive.trajectorySequenceBuilder(startposebl2)
+                .strafeTo(new Vector2d(-36, 49))
+                .build();
+
+        TrajectorySequence redRight3p3 = drive.trajectorySequenceBuilder(startposerr2)
+                .strafeTo(new Vector2d(42, 49))
+                .build();
+
+        TrajectorySequence blueLeft3p3 = drive.trajectorySequenceBuilder(startposebl2)
+                .strafeTo(new Vector2d(-30, 49))
                 .build();
 
         /*// Initialize the hardware variables. Note that the strings used here as parameters
@@ -256,8 +422,7 @@ public class AutoMeat1 extends LinearOpMode
         //if (USE_WEBCAM)
             //setManualExposure(6, 250);  // Use low exposure time to reduce motion blur
 
-        // Wait for driver to press start
-        PropDetector propDetector = new PropDetector(hardwareMap);
+        //PropDetector propDetector = new PropDetector(hardwareMap);
         if (program == 1) {
             //drive.setPoseEstimate(new Pose2d(0, 0, 0));
             telemetry.addData(">", "blue left program sulected");
@@ -275,36 +440,251 @@ public class AutoMeat1 extends LinearOpMode
         telemetry.addData("Camera preview on/off", "3 dots, Camera Stream");
         telemetry.addData(">", "Touch Play to start OpMode");
         telemetry.update();
+        //for cam
+        int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier("cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
+        camera = OpenCvCameraFactory.getInstance().createWebcam(hardwareMap.get(WebcamName.class, "Webcam 1"), cameraMonitorViewId);
+        aprilTagDetectionPipeline = new AprilTagDetectionPipeline(tagsize, fx, fy, cx, cy);
+
+        camera.setPipeline(aprilTagDetectionPipeline);
+        camera.openCameraDeviceAsync(new OpenCvCamera.AsyncCameraOpenListener()
+        {
+            @Override
+            public void onOpened()
+            {
+                camera.startStreaming(800,448, OpenCvCameraRotation.UPRIGHT);
+            }
+
+            @Override
+            public void onError(int errorCode)
+            {
+
+            }
+        });
+
+        telemetry.setMsTransmissionInterval(50);
+
+        /*
+         * The INIT-loop:
+         * This REPLACES waitForStart!
+         */
+
+        while (!isStarted() && !isStopRequested())
+        {
+            ArrayList<org.openftc.apriltag.AprilTagDetection> currentDetections = aprilTagDetectionPipeline.getLatestDetections();
+
+            if(currentDetections.size() != 0)
+            {
+                boolean tagFound = false;
+
+                for(org.openftc.apriltag.AprilTagDetection tag : currentDetections)
+                {
+                    if(tag.id == ID_TAG_OF_INTEREST)
+                    {
+                        tagOfInterest = tag;
+                        tagFound = true;
+                        break;
+                    }
+                }
+
+                if(tagFound)
+                {
+                    telemetry.addLine("Tag of interest is in sight!\n\nLocation data:");
+                    tagToTelemetry(tagOfInterest);
+                }
+                else
+                {
+                    telemetry.addLine("Don't see tag of interest :(");
+
+                    if(tagOfInterest == null)
+                    {
+                        telemetry.addLine("(The tag has never been seen)");
+                    }
+                    else
+                    {
+                        telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
+                        tagToTelemetry(tagOfInterest);
+                    }
+                }
+
+            }
+            else
+            {
+                telemetry.addLine("Don't see tag of interest :(");
+
+                if(tagOfInterest == null)
+                {
+                    telemetry.addLine("(The tag has never been seen)");
+                }
+                else
+                {
+                    telemetry.addLine("\nBut we HAVE seen the tag before; last seen at:");
+                    tagToTelemetry(tagOfInterest);
+                }
+
+            }
+            telemetry.addData("Zone", aprilTagDetectionPipeline.getTargetZone(0));
+            telemetry.update();
+            sleep(20);
+        }
+
+        /*
+         * The START command just came in: now work off the latest snapshot acquired
+         * during the init loop.
+         */
+
+        /* Update the telemetry */
+        if(tagOfInterest != null)
+        {
+            telemetry.addLine("Tag snapshot:\n");
+            tagToTelemetry(tagOfInterest);
+            telemetry.update();
+        }
+        else
+        {
+            telemetry.addLine("No tag snapshot available, it was never sighted during the init loop :(");
+            telemetry.update();
+        }
+
+        /* Actually do something useful */
+        if(tagOfInterest == null)
+        {
+            /*
+             * Insert your autonomous code here, presumably running some default configuration
+             * since the tag was never sighted during INIT
+             */
+        }
+        else
+        {
+            /*
+             * Insert your autonomous code here, probably using the tag pose to decide your configuration.
+             */
+
+            // e.g.
+            if(tagOfInterest.pose.x <= 20)
+            {
+                // do something
+            }
+            else if(tagOfInterest.pose.x >= 20 && tagOfInterest.pose.x <= 50)
+            {
+                // do something else
+            }
+            else if(tagOfInterest.pose.x >= 50)
+            {
+                // do something else
+            }
+        }
+
+
+
+
         waitForStart();
 
         if (program == 1 || program == 2) {
             //Blue
-            zone = propDetector.getTargetZone(1);
+            zone = aprilTagDetectionPipeline.getTargetZone(1);
         } else {
             //Red
-            zone = propDetector.getTargetZone(0);
+            zone = aprilTagDetectionPipeline.getTargetZone(0);
         }
 
 
         if (program == 1) {
-            telemetry.addData("", "");
-        } else if (program == 2) {
-            telemetry.addData("", "");
-        } else if (program == 3) {
-            telemetry.addData("", "");
-        } else {
+            //bl
             if (zone == 1){
-                //drive.followTrajectory(redRight1p1);
-                //drive.followTrajectory(redRight1p2);
+                drive.followTrajectorySequence(blueLeft1p1);
+                drive.followTrajectorySequence(blueLeft1p2);
+                arm.setPower(.5);
+                sleep(1400);
+                arm.setPower(0);
+                drive.followTrajectorySequence(blueLeft1p3);
+            } else if (zone == 2) {
+                //drive.followTrajectory(redRight2p1);
+                drive.followTrajectorySequence(blueLeft2p1);
+                drive.followTrajectorySequence(blueLeft2p2);
+                arm.setPower(.5);
+                sleep(1400);
+                arm.setPower(0);
+                drive.followTrajectorySequence(blueLeft2p3);
+
+            } else {
+                drive.followTrajectorySequence(blueLeft3p1);
+                drive.followTrajectorySequence(blueLeft3p2);
+                arm.setPower(.5);
+                sleep(1400);
+                arm.setPower(0);
+                drive.followTrajectorySequence(blueLeft3p3);
+            }
+            pixel2.setPower(0);
+            pixel1.setPower(1);
+            sleep(1000);
+            arm.setPower(.5);
+            sleep(1000);
+            arm.setPower(0);
+        } else if (program == 2) {
+            //br
+            if (zone == 1){
+                drive.followTrajectorySequence(redRight1p1);
+                drive.followTrajectorySequence(redRight1p2);
             } else if (zone == 2) {
                 //drive.followTrajectory(redRight2p1);
                 drive.followTrajectorySequence(redRight2p1);
                 drive.followTrajectorySequence(redRight2p2);
+
             } else {
-                //drive.followTrajectory(redRight3p1);
-                //drive.followTrajectory(redRight3p2);
+                drive.followTrajectorySequence(redRight3p1);
+                drive.followTrajectorySequence(redRight3p2);
             }
+            pixel2.setPower(0);
+        } else if (program == 3) {
+            //rl
+            if (zone == 1){
+                drive.followTrajectorySequence(blueLeft1p1);
+                drive.followTrajectorySequence(blueLeft1p2);
+            } else if (zone == 2) {
+                //drive.followTrajectory(redRight2p1);
+                drive.followTrajectorySequence(blueLeft2p1);
+                drive.followTrajectorySequence(blueLeft2p2);
+
+            } else {
+                drive.followTrajectorySequence(blueLeft3p1);
+                drive.followTrajectorySequence(blueLeft3p2);
+            }
+            pixel2.setPower(0);
+        } else {
+            //rr
+            if (zone == 1){
+                drive.followTrajectorySequence(redRight1p1);
+                drive.followTrajectorySequence(redRight1p2);
+                arm.setPower(.5);
+                sleep(1600);
+                arm.setPower(0);
+                drive.followTrajectorySequence(redRight1p3);
+            } else if (zone == 2) {
+                //drive.followTrajectory(redRight2p1);
+                drive.followTrajectorySequence(redRight2p1);
+                drive.followTrajectorySequence(redRight2p2);
+                arm.setPower(.5);
+                sleep(1600);
+                arm.setPower(0);
+                drive.followTrajectorySequence(redRight2p3);
+            } else {
+                drive.followTrajectorySequence(redRight3p1);
+                drive.followTrajectorySequence(redRight3p2);
+                arm.setPower(.5);
+                sleep(1600);
+                arm.setPower(0);
+                drive.followTrajectorySequence(redRight3p3);
+            }
+            pixel2.setPower(0);
+            pixel1.setPower(1);
+            sleep(1000);
+            arm.setPower(.5);
+            sleep(1000);
+            arm.setPower(0);
         }
+        PoseStorage.currentPose = drive.getPoseEstimate();
+        sleep(1000);
+
         /*while (opModeIsActive())
         {
             // Step through the list of detected tags and look for a matching tag
@@ -457,4 +837,17 @@ public class AutoMeat1 extends LinearOpMode
             sleep(20);
         }
     }
+    void tagToTelemetry(org.openftc.apriltag.AprilTagDetection detection)
+    {
+        Orientation rot = Orientation.getOrientation(detection.pose.R, AxesReference.INTRINSIC, AxesOrder.YXZ, AngleUnit.DEGREES);
+
+        telemetry.addLine(String.format("\nDetected tag ID=%d", detection.id));
+        telemetry.addLine(String.format("Translation X: %.2f feet", detection.pose.x*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Y: %.2f feet", detection.pose.y*FEET_PER_METER));
+        telemetry.addLine(String.format("Translation Z: %.2f feet", detection.pose.z*FEET_PER_METER));
+        telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", rot.firstAngle));
+        telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", rot.secondAngle));
+        telemetry.addLine(String.format("Rotation Roll: %.2f degrees", rot.thirdAngle));
+    }
 }
+
