@@ -102,8 +102,8 @@ public class SampleMecanumDrive extends MecanumDrive {
         //IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
         //        DriveConstants.LOGO_FACING_DIR, DriveConstants.USB_FACING_DIR));
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                new Orientation(AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES,
-                        -45, 0, 0,
+                new Orientation(AxesReference.INTRINSIC, AxesOrder.ZXY, AngleUnit.DEGREES,
+                        135, 90, 0,
                         0  // acquisitionTime, not used
                 )
         )

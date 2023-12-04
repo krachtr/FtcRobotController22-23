@@ -115,28 +115,28 @@ class AprilTagDetectionPipeline extends OpenCvPipeline
                 input,
                 new Point(
                         0,
-                        150),
+                        120),
                 new Point(
                         70,
-                        240),
+                        210),
                 new Scalar(0, 255, 0), 4);
         Imgproc.rectangle(
                 input,
                 new Point(
                         370,
-                        90),
+                        130),
                 new Point(
                         440,
-                        180),
+                        220),
                 new Scalar(0, 255, 0), 4);
         Imgproc.rectangle(
                 input,
                 new Point(
-                        730,
-                        100),
+                        690,
+                        220),
                 new Point(
-                        800,
-                        190),
+                        760,
+                        310),
                 new Scalar(0, 255, 0), 4);
         // Convert to greyscale
         Imgproc.cvtColor(input, grey, Imgproc.COLOR_RGBA2GRAY);
@@ -368,9 +368,9 @@ class AprilTagDetectionPipeline extends OpenCvPipeline
         }
     }
     public int getTargetZone(int color){
-        Rect roi1 = new Rect(0, 150, 70, 90);
-        Rect roi2 = new Rect(370, 90, 70, 90);
-        Rect roi3 = new Rect(730, 100, 70, 90);
+        Rect roi1 = new Rect(0, 120, 70, 90);
+        Rect roi2 = new Rect(370, 130, 70, 90);
+        Rect roi3 = new Rect(690, 220, 70, 90);
         if (matForProp !=null) {
             Mat cropped1 = new Mat(matForProp, roi1);
             Mat cropped2 = new Mat(matForProp, roi2);

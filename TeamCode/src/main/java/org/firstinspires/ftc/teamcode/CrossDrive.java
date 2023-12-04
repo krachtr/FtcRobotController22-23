@@ -45,7 +45,7 @@ public class CrossDrive extends LinearOpMode {
         pixel1 = hardwareMap.get(CRServo.class, "pixel1");
         pixel2 = hardwareMap.get(CRServo.class, "pixel2");
         shooter = hardwareMap.get(Servo.class, "shooter");
-
+//initializing all the motors.
 
 
         // Put initialization blocks here.
@@ -57,7 +57,7 @@ public class CrossDrive extends LinearOpMode {
 
         pixel1.setDirection(CRServo.Direction.FORWARD);
         pixel2.setDirection(CRServo.Direction.FORWARD);
-
+//setting the direction of the motors.
        // Drive drive = new Drive();
         //PropDetector propDetector = new PropDetector(hardwareMap);
         SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
@@ -77,6 +77,7 @@ public class CrossDrive extends LinearOpMode {
                 } else {
                     arm.setPower(0);
                 }
+//setting the arm power when the right stick moved.
                 if (gamepad1.a){
                     pixel1.setPower(.5);
                 } else if (gamepad1.y) {
@@ -91,16 +92,20 @@ public class CrossDrive extends LinearOpMode {
                 }else {
                     pixel2.setPower(0);
                 }
+//setting the intake power when pressing A,X,Y or B.
                 if (gamepad1.right_bumper){
                     shooter.setPosition(.5);
                 } else {
                     shooter.setPosition(0);
                 }
+//Setting the shooter power when the right bumper is pressed.
                 if (gamepad1.start){
                     angleOfset = 0-myPose.getHeading();
                 }
+//setting the angle of the robot when start is pressed.
                 move(gamepad1.left_stick_x, gamepad1.left_stick_y, (gamepad1.right_trigger - gamepad1.left_trigger), 1.5);
                 //}
+//moves the robot depending on which direction the left stick is moved.
                 /*telemetry.addData("X", drive.getFieldX());
                 telemetry.addData("Y", drive.getFieldY());
                 telemetry.addData("A", drive.getFieldA());
@@ -137,5 +142,5 @@ public class CrossDrive extends LinearOpMode {
         front.setPower((rx + a) * speed);
         back.setPower((rx - a) * speed);
     }
-
+//Setting the power of the of the motor for the wheels.
 }
