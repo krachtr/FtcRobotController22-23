@@ -31,12 +31,14 @@ package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 import com.acmerobotics.roadrunner.geometry.Vector2d;
+import com.qualcomm.hardware.rev.Rev2mDistanceSensor;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.BuiltinCameraDirection;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
@@ -45,6 +47,7 @@ import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainCon
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
 import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Orientation;
 import org.firstinspires.ftc.teamcode.drive.SampleMecanumDrive;
 import org.firstinspires.ftc.teamcode.trajectorysequence.TrajectorySequence;
@@ -93,10 +96,23 @@ import java.util.concurrent.TimeUnit;
  *
  */
 
-@Autonomous(name="Auto Meat 2", group = "A")
-@Disabled
-public class AutoMeat2 extends LinearOpMode
+@Autonomous(name="Auto Qualifier", group = "A")
+
+public class AutoQualifier extends LinearOpMode
+
 {
+    double lineupY = 0;
+    TrajectorySequence lineupMove;
+    double target = 0;
+    double ldis = 0;
+    double rdis = 0;
+
+    double Ltarget = 2.7;
+
+    double Rtarget = 2;
+
+    private DistanceSensor sensorDistanceL;
+    private DistanceSensor sensorDistanceR;
 
     // Adjust these numbers to suit your robot.
     final double DESIRED_DISTANCE = 12.0; //  this is how close the camera should get to the target (inches)
@@ -120,7 +136,7 @@ public class AutoMeat2 extends LinearOpMode
     private DcMotor inMotor = null;
     private DcMotor outMotor = null;
     private DcMotor graberMotor = null;
-    private DcMotor upMotor = null;
+    private DcMotorEx upMotor = null;
 
     public Servo shooter;
 
@@ -152,12 +168,27 @@ public class AutoMeat2 extends LinearOpMode
 
     org.openftc.apriltag.AprilTagDetection tagOfInterest = null;
 
+    long wate1 = 0;
+    long wate2 = 0;
+
+    boolean farePath = false;
+
+    boolean parkFar = false;
+
+    private ElapsedTime     runtime = new ElapsedTime();
+
 
 
 
 
 
     @Override public void runOpMode() throws InterruptedException {
+
+        sensorDistanceL = hardwareMap.get(DistanceSensor.class, "leftdis");
+        sensorDistanceR = hardwareMap.get(DistanceSensor.class, "rightdist");
+
+        Rev2mDistanceSensor sensorTimeOfFlightL = (Rev2mDistanceSensor) sensorDistanceL;
+        Rev2mDistanceSensor sensorTimeOfFlightR = (Rev2mDistanceSensor) sensorDistanceR;
 //This is initializing The intake servos.
         int grabUpPos = 26594;
         int grabHangPos = 15661;
@@ -165,15 +196,15 @@ public class AutoMeat2 extends LinearOpMode
         int grabDownPos = 0;
 
         int outLoadPos = 0;
-        int outDropPos = -600;
+        int outDropPos = 580;
         int outLineupPos = -250;
 
         int upRedyPos = 419;
-        int upStartPos = 1600;
+        int upStartPos = 670;
         inMotor = hardwareMap.get(DcMotor.class, "in");
         outMotor = hardwareMap.get(DcMotor.class, "out");
         graberMotor = hardwareMap.get(DcMotor.class, "grab");
-        upMotor = hardwareMap.get(DcMotor.class, "up");
+        upMotor = hardwareMap.get(DcMotorEx.class, "up");
 
         inMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -200,6 +231,11 @@ public class AutoMeat2 extends LinearOpMode
         while (!gamepad1.a){
             if(gamepad1.dpad_up){
                 program ++;
+                if (program < 1){
+                    program = 4;
+                } else if (program > 4) {
+                    program = 1;
+                }
                 if (program == 1) {
                     telemetry.addData("sulect a starting position whith the dPad: ", "blue left");
                 } else if (program == 2) {
@@ -215,6 +251,11 @@ public class AutoMeat2 extends LinearOpMode
                 }
             } else if (gamepad1.dpad_down) {
                 program --;
+                if (program < 1){
+                    program = 4;
+                } else if (program > 4) {
+                    program = 1;
+                }
                 if (program == 1) {
                     telemetry.addData("sulect a starting position whith the dPad: ", "blue left");
                 } else if (program == 2) {
@@ -229,15 +270,84 @@ public class AutoMeat2 extends LinearOpMode
                     Thread.sleep(10);
                 }
             }
-            if (program < 1){
-                program = 4;
-            } else if (program > 4) {
-                program = 1;
-            }
 
             Thread.sleep(10);
         }
 //This tells the robot where on the field it is starting.
+        while (gamepad1.a){
+            Thread.sleep(10);
+        }
+        while (!gamepad1.a){
+            if(gamepad1.dpad_up){
+                wate1 += 200;
+            } else if (gamepad1.dpad_down) {
+                wate1 -= 200;
+            }
+            if (wate1 < 0){
+                wate1 = 0;
+            } else if (wate1 > 30000) {
+                wate1 = 30000;
+            }
+            telemetry.addData("1st wate until:", wate1);
+            telemetry.update();
+            Thread.sleep(50);
+        }
+        while (gamepad1.a){
+            Thread.sleep(10);
+        }
+        while (!gamepad1.a){
+            if(gamepad1.dpad_up){
+                wate2 += 200;
+            } else if (gamepad1.dpad_down) {
+                wate2 -= 200;
+            }
+            if (wate2 < 0){
+                wate2 = 0;
+            } else if (wate2 > 30000) {
+                wate2 = 30000;
+            }
+            telemetry.addData("2nd wate until:", wate2);
+            telemetry.update();
+            Thread.sleep(50);
+        }
+        while (gamepad1.a){
+            Thread.sleep(10);
+        }
+        while (!gamepad1.a){
+            if(gamepad1.dpad_up){
+                farePath = !farePath;
+                while (gamepad1.dpad_up){
+                    Thread.sleep(10);
+                }
+            } else if (gamepad1.dpad_down) {
+                farePath = !farePath;
+                while (gamepad1.dpad_down){
+                    Thread.sleep(10);
+                }
+            }
+            telemetry.addData("Fare Path = ", farePath);
+            telemetry.update();
+            Thread.sleep(50);
+        }
+        while (gamepad1.a){
+            Thread.sleep(10);
+        }
+        while (!gamepad1.a){
+            if(gamepad1.dpad_up){
+                parkFar = !parkFar;
+                while (gamepad1.dpad_up){
+                    Thread.sleep(10);
+                }
+            } else if (gamepad1.dpad_down) {
+                parkFar = !parkFar;
+                while (gamepad1.dpad_down){
+                    Thread.sleep(10);
+                }
+            }
+            telemetry.addData("Park Fare = ", parkFar);
+            telemetry.update();
+            Thread.sleep(50);
+        }
         boolean targetFound     = false;    // Set to true when an AprilTag target is detected
         double  driveForword    = 0;        // Desired forward power/speed (-1 to +1)
         double  strafe          = 0;        // Desired strafe power/speed (-1 to +1)
@@ -265,25 +375,46 @@ public class AutoMeat2 extends LinearOpMode
         Pose2d startpose2bl  = new Pose2d(-33.5, 18,Math.toRadians(-45));
         Pose2d startpose3bl = new Pose2d(-38, 7.5,Math.toRadians(-105));
 
-        Pose2d startposebr = new Pose2d(61,12,Math.toRadians(135));
-        Pose2d startpose1br = new Pose2d(38, 7,Math.toRadians(180));
-        Pose2d startpose2br  = new Pose2d(32.5, 18,Math.toRadians(135));
-        Pose2d startpose3br = new Pose2d(42, 23, Math.toRadians(125));
+        Pose2d startposebr = new Pose2d(-61,-36,Math.toRadians(-45));
+        Pose2d startpose3br = new Pose2d(-42, -46,Math.toRadians(-45));
+        Pose2d startpose2br  = new Pose2d(-33.5, -42,Math.toRadians(-45));
+        Pose2d startpose1br = new Pose2d(-38, -31.5, Math.toRadians(0));
+        Pose2d startposep3br = new Pose2d(-36, -58, Math.toRadians(-135));
+        Pose2d startposep3v2closebr = new Pose2d(-57, -12, Math.toRadians(-135));
+        Pose2d startposep3v2farebr = new Pose2d(-11, -12, Math.toRadians(-135));
+        Pose2d startposep4farbr = new Pose2d(-11, 42, Math.toRadians(-135));
 
-        Pose2d startposerl = new Pose2d(61,12,Math.toRadians(135));
-        Pose2d startpose1rl = new Pose2d(38, 7,Math.toRadians(180));
-        Pose2d startpose2rl  = new Pose2d(32.5, 18,Math.toRadians(135));
-        Pose2d startpose3rl = new Pose2d(42, 23, Math.toRadians(125));
+        Pose2d startposep4closebr = new Pose2d(-57, 45, Math.toRadians(-135));
+        Pose2d startpose3p5b = new Pose2d(-28.5, 47.25, Math.toRadians(-135));
+        Pose2d startpose2p5b = new Pose2d(-36, 47.25, Math.toRadians(-135));
+        Pose2d startpose1p5b = new Pose2d(-41, 47.25, Math.toRadians(-135));
+
+        Pose2d startposerl = new Pose2d(61,-36,Math.toRadians(135));
+        Pose2d startpose1rl = new Pose2d(42, -49,Math.toRadians(-45 + 180));
+        Pose2d startpose2rl  = new Pose2d(33.5, -42,Math.toRadians(-45 + 180));
+        Pose2d startpose3rl = new Pose2d(38, -32.5, Math.toRadians(-105 + 180));
+        Pose2d startposep3rl = new Pose2d(36, 35*-1 - 21, Math.toRadians(-135));
+        Pose2d startposep3v2closerl = new Pose2d(57, -12, Math.toRadians(-135));
+        Pose2d startposep3v2farrl = new Pose2d(11, -12, Math.toRadians(-135));
+        Pose2d startposep4farrl = new Pose2d(11, 42, Math.toRadians(-135));
+
+        Pose2d startposep4closerl = new Pose2d(57, 45, Math.toRadians(-135));
+        Pose2d startpose1p5r = new Pose2d(28.5, 47.25, Math.toRadians(-135));
+        Pose2d startpose2p5r = new Pose2d(36, 47.25, Math.toRadians(-135));
+        Pose2d startpose3p5r = new Pose2d(42, 47.25, Math.toRadians(-135));
+
+        Pose2d lineUpStartPos = new Pose2d(drive.getPoseEstimate().getX(), lineupY, drive.getPoseEstimate().getHeading());
+
 // This is all the possible places that the robot could start.
         if (program == 1) {
             // blue left, closest to back bord
             drive.setPoseEstimate(startposebl);
         } else if (program == 2) {
             // blue right, farthest to back bord
-            drive.setPoseEstimate(startposerr);
+            drive.setPoseEstimate(startposebr);
         } else if (program == 3) {
             // red left, farthest to back bord
-            drive.setPoseEstimate(startposebl);
+            drive.setPoseEstimate(startposerl);
         } else {
             // red right, closest to back bord
             drive.setPoseEstimate(startposerr);
@@ -302,6 +433,9 @@ public class AutoMeat2 extends LinearOpMode
                 //.splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
                 //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
                 .build();
+        TrajectorySequence lineupMove = drive.trajectorySequenceBuilder(lineUpStartPos)
+                .strafeTo(new Vector2d(drive.getPoseEstimate().getX(), target)).
+                build();
         TrajectorySequence redRight1p2 = drive.trajectorySequenceBuilder(startpose1rr)
                 .strafeTo(new Vector2d(40, 11))
                 .splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
@@ -349,7 +483,7 @@ public class AutoMeat2 extends LinearOpMode
 
         TrajectorySequence blueLeft1p1 = drive.trajectorySequenceBuilder(startposebl)
                 .strafeTo(new Vector2d(-58, 15))
-                .splineToConstantHeading(new Vector2d(-42, 25), Math.toRadians(90))
+                .splineToConstantHeading(new Vector2d(-42, 25), Math.toRadians(0))
                 .addDisplacementMarker(22, () -> {
                     // This marker runs 20 inches into the trajectory
                     inMotor.setPower(.5);
@@ -400,12 +534,217 @@ public class AutoMeat2 extends LinearOpMode
                 .build();
 
 
+        TrajectorySequence redLeft1p1 = drive.trajectorySequenceBuilder(startposerl)
+                .strafeTo(new Vector2d(58, 15*-1 - 24))
+                .splineToConstantHeading(new Vector2d(42, 25*-1 - 24), Math.toRadians(90-180))
+                .addDisplacementMarker(22, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    inMotor.setPower(.5);
+                    // Run your action in here!
+                })
+
+                //.strafeTo(new Vector2d(36, 9))
+                //.splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+        TrajectorySequence redLeft1p2 = drive.trajectorySequenceBuilder(startpose1rl)
+                .strafeTo(new Vector2d(45, 25 *-1 - 24))
+                //.splineToConstantHeading(new Vector2d(46, 28), Math.toRadians(175))
+                .splineToSplineHeading(new Pose2d(36, 35 *-1 - 21, Math.toRadians(-135)), Math.toRadians(0 + 180))
+                .build();
+        TrajectorySequence redLeft2p1 = drive.trajectorySequenceBuilder(startposerl)
+                .strafeTo(new Vector2d(33.5, 18*-1 - 24))
+                .addDisplacementMarker(20, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    inMotor.setPower(.5);
+                    // Run your action in here!
+                })
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+        TrajectorySequence redLeft2p2 = drive.trajectorySequenceBuilder(startpose2rl)
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+
+                .strafeTo(new Vector2d(35, 20.5*-1 - 24))
+                .splineToSplineHeading(new Pose2d(36, 35*-1 - 21, Math.toRadians(-135)), Math.toRadians(45 -180))
+                .build();
+        TrajectorySequence redLeft3p1 = drive.trajectorySequenceBuilder(startposerl)
+                .strafeTo(new Vector2d(44, 9*-1 - 24))
+                .splineToSplineHeading(new Pose2d(38, 8.5*-1 - 24, Math.toRadians(-105 + 180)), Math.toRadians(180 -180))
+                .addTemporalMarker(3, () -> {
+                    // This marker runs two seconds into the trajectory
+                    inMotor.setPower(.5);
+                    // Run your action in here!
+                })
+                .build();
+        TrajectorySequence redLeft3p2 = drive.trajectorySequenceBuilder(startpose3rl)
+                .strafeTo(new Vector2d(40, 11*-1 - 24))
+                .splineToConstantHeading(new Vector2d(41, 14*-1 - 24), Math.toRadians(90 -180))
+                .splineToSplineHeading(new Pose2d(36, 35*-1 - 21, Math.toRadians(-135)), Math.toRadians(90-180))
+                .build();
+
+        TrajectorySequence redLeftp3close = drive.trajectorySequenceBuilder(startposep3rl)
+                .strafeTo(new Vector2d(57, 35*-1 - 24))
+                .strafeTo(new Vector2d(57, -12))
+                .build();
+
+        TrajectorySequence redLeftp3v2close = drive.trajectorySequenceBuilder(startposep3v2closerl)
+                .strafeTo(new Vector2d(57, 45))
+                .build();
+
+
+        TrajectorySequence redLeftp3far = drive.trajectorySequenceBuilder(startposep3rl)
+                .strafeTo(new Vector2d(11, 35*-1 - 24))
+                .strafeTo(new Vector2d(11, -12))
+                .build();
+
+        TrajectorySequence redLeftp3v2far = drive.trajectorySequenceBuilder(startposep3v2farrl)
+                .strafeTo(new Vector2d(11, 42))
+                .build();
+
+
+
+        TrajectorySequence BlueRight3p1 = drive.trajectorySequenceBuilder(startposebr)
+                .strafeTo(new Vector2d(-58, -39))
+                .splineToConstantHeading(new Vector2d(-42, -46), Math.toRadians(-90))
+                .addDisplacementMarker(22, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    inMotor.setPower(.5);
+                    // Run your action in here!
+                })
+
+
+                //.strafeTo(new Vector2d(36, 9))
+                //.splineToConstantHeading(new Vector2d(41, 14), Math.toRadians(90))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+        TrajectorySequence BlueRight3p2 = drive.trajectorySequenceBuilder(startpose3br)
+                .strafeTo(new Vector2d(-45, 25 *-1 - 24))
+                //.splineToConstantHeading(new Vector2d(46, 28), Math.toRadians(175))
+                .splineToSplineHeading(new Pose2d(-36, -58, Math.toRadians(-135)), Math.toRadians(0))
+                .build();
+
+        TrajectorySequence BlueRight2p1 = drive.trajectorySequenceBuilder(startposebr)
+                .strafeTo(new Vector2d(-33.5, 18*-1 - 24))
+                .addDisplacementMarker(20, () -> {
+                    // This marker runs 20 inches into the trajectory
+                    inMotor.setPower(.5);
+                    // Run your action in here!
+                })
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+                .build();
+        TrajectorySequence BlueRight2p2 = drive.trajectorySequenceBuilder(startpose2br)
+                //.strafeTo(new Vector2d(43, 12))
+                //.splineToConstantHeading(new Vector2d(43, 20), Math.toRadians(175))
+                //.splineToSplineHeading(new Pose2d(36, 35, Math.toRadians(45)), Math.toRadians(90))
+
+                .strafeTo(new Vector2d(-35, 20.5*-1 - 24))
+                .splineToSplineHeading(new Pose2d(-34, -58, Math.toRadians(-135)), Math.toRadians(45 -180))
+                .build();
+        TrajectorySequence BlueRight1p1 = drive.trajectorySequenceBuilder(startposebr)
+                .strafeTo(new Vector2d(-44, 9*-1 - 24))
+                .splineToSplineHeading(new Pose2d(-38, 7.5*-1 - 24, Math.toRadians(0)), Math.toRadians(0))
+                .addTemporalMarker(3, () -> {
+                    // This marker runs two seconds into the trajectory
+                    inMotor.setPower(.5);
+                    // Run your action in here!
+                })
+                .build();
+        TrajectorySequence BlueRight1p2 = drive.trajectorySequenceBuilder(startpose1br)
+                .strafeTo(new Vector2d(-40, 11*-1 - 24))
+                .splineToConstantHeading(new Vector2d(-41, 14*-1 - 24), Math.toRadians(-90))
+                .splineToSplineHeading(new Pose2d(-36, -58, Math.toRadians(-135)), Math.toRadians(-90))
+
+                .build();
+
+        TrajectorySequence BlueRightp3close = drive.trajectorySequenceBuilder(startposep3br)
+                .strafeTo(new Vector2d(-57, 35*-1 - 24))
+                .strafeTo(new Vector2d(-57, -12))
+                .build();
+
+        TrajectorySequence BlueRightp3v2close = drive.trajectorySequenceBuilder(startposep3v2closebr)
+                .strafeTo(new Vector2d(-57, 45))
+                .build();
+
+
+        TrajectorySequence BlueRightp3far = drive.trajectorySequenceBuilder(startposep3br)
+                .strafeTo(new Vector2d(-11, 35*-1 - 24))
+                .strafeTo(new Vector2d(-11, -12))
+
+                .build();
+
+        TrajectorySequence BlueRightp3v2far = drive.trajectorySequenceBuilder(startposep3v2farebr)
+                .strafeTo(new Vector2d(-11, 42))
+                .build();
+
+        TrajectorySequence BlueRight3p4far = drive.trajectorySequenceBuilder(startposep4farbr)
+                .strafeTo(new Vector2d(-28.5, 47.25))
+                .build();
+        TrajectorySequence BlueRight2p4far = drive.trajectorySequenceBuilder(startposep4farbr)
+                .strafeTo(new Vector2d(-34, 47.25))
+                .build();
+        TrajectorySequence BlueRight1p4far = drive.trajectorySequenceBuilder(startposep4farbr)
+                .strafeTo(new Vector2d(-42, 49))
+                .build();
+        TrajectorySequence BlueRight3p4close = drive.trajectorySequenceBuilder(startposep4closebr)
+                .strafeTo(new Vector2d(-28.5, 47.25))
+                .build();
+        TrajectorySequence BlueRight2p4close = drive.trajectorySequenceBuilder(startposep4closebr)
+                .strafeTo(new Vector2d(-32, 47.25))
+                .build();
+        TrajectorySequence BlueRight1p4close = drive.trajectorySequenceBuilder(startposep4closebr)
+                .strafeTo(new Vector2d(-40, 47.25))
+                .build();
+
+        TrajectorySequence blue1p5far = drive.trajectorySequenceBuilder(startpose1p5b)
+                .strafeTo(new Vector2d(-11, 40))
+                .build();
+        TrajectorySequence blue2p5far = drive.trajectorySequenceBuilder(startpose2p5b)
+                .strafeTo(new Vector2d(-11, 40))
+                .build();
+        TrajectorySequence blue3p5far = drive.trajectorySequenceBuilder(startpose3p5b)
+                .strafeTo(new Vector2d(-11, 40))
+                .build();
+        TrajectorySequence blue1p5close = drive.trajectorySequenceBuilder(startpose1p5b)
+                .strafeTo(new Vector2d(-56, 40))
+                .build();
+        TrajectorySequence blue2p5close = drive.trajectorySequenceBuilder(startpose2p5b)
+                .strafeTo(new Vector2d(-56, 40))
+                .build();
+        TrajectorySequence blue3p5close = drive.trajectorySequenceBuilder(startpose3p5b)
+                .strafeTo(new Vector2d(-56, 40))
+                .build();
+
+
         TrajectorySequence redRight1p3 = drive.trajectorySequenceBuilder(startposerr2)
                 .strafeTo(new Vector2d(28.5, 52.5))
                 .build();
+        TrajectorySequence redLeft1p4far = drive.trajectorySequenceBuilder(startposep4farrl)
+                .strafeTo(new Vector2d(28.5, 47.25))
+                .build();
+        TrajectorySequence redLeft2p4far = drive.trajectorySequenceBuilder(startposep4farrl)
+                .strafeTo(new Vector2d(36, 47.25))
+                .build();
+        TrajectorySequence redLeft3p4far = drive.trajectorySequenceBuilder(startposep4farrl)
+                .strafeTo(new Vector2d(42, 47.25))
+                .build();
+        TrajectorySequence redLeft1p4close = drive.trajectorySequenceBuilder(startposep4closerl)
+                .strafeTo(new Vector2d(28.5, 47.25))
+                .build();
+        TrajectorySequence redLeft2p4close = drive.trajectorySequenceBuilder(startposep4closerl)
+                .strafeTo(new Vector2d(36, 47.25))
+                .build();
+        TrajectorySequence redLeft3p4close = drive.trajectorySequenceBuilder(startposep4closerl)
+                .strafeTo(new Vector2d(42, 47.25))
+                .build();
 
         TrajectorySequence blueLeft1p3 = drive.trajectorySequenceBuilder(startposebl2)
-                .strafeTo(new Vector2d(-40, 52.5))
+                .strafeTo(new Vector2d(-40, 52))
                 .build();
 
         TrajectorySequence redRight2p3 = drive.trajectorySequenceBuilder(startposerr2)
@@ -423,6 +762,26 @@ public class AutoMeat2 extends LinearOpMode
         TrajectorySequence blueLeft3p3 = drive.trajectorySequenceBuilder(startposebl2)
                 .strafeTo(new Vector2d(-26.5, 52.5))
                 .build();
+
+        TrajectorySequence red1p5far = drive.trajectorySequenceBuilder(startpose1p5r)
+                .strafeTo(new Vector2d(11, 40))
+                .build();
+        TrajectorySequence red2p5far = drive.trajectorySequenceBuilder(startpose2p5r)
+                .strafeTo(new Vector2d(11, 40))
+                .build();
+        TrajectorySequence red3p5far = drive.trajectorySequenceBuilder(startpose3p5r)
+                .strafeTo(new Vector2d(11, 40))
+                .build();
+        TrajectorySequence red1p5close = drive.trajectorySequenceBuilder(startpose1p5r)
+                .strafeTo(new Vector2d(56, 40))
+                .build();
+        TrajectorySequence red2p5close = drive.trajectorySequenceBuilder(startpose2p5r)
+                .strafeTo(new Vector2d(56, 40))
+                .build();
+        TrajectorySequence red3p5close = drive.trajectorySequenceBuilder(startpose3p5r)
+                .strafeTo(new Vector2d(56, 40))
+                .build();
+
 //This is the different paths the robot will take depending on where it is.
         /*// Initialize the hardware variables. Note that the strings used here as parameters
         // to 'get' must match the names assigned during the robot configuration.
@@ -609,21 +968,23 @@ public class AutoMeat2 extends LinearOpMode
 
 
         waitForStart();
+        runtime.reset();
 
         if (program == 1 || program == 2) {
             //Blue
+            PoseStorage.redSide = false;
             zone = aprilTagDetectionPipeline.getTargetZone(1);
         } else {
             //Red
             zone = aprilTagDetectionPipeline.getTargetZone(0);
+            PoseStorage.redSide = true;
         }
         //shooter.setPosition(.75);
         ((DcMotorEx) graberMotor).setVelocity(10000);
-        outMotor.setPower(.6);
-        upMotor.setPower(1);
+        outMotor.setPower(.45);
+        //upMotor.setPower(.2);
         graberMotor.setTargetPosition(grabDownPos);
 //This tells the robot to look for the red or the blue prop.
-
         if (program == 1) {
             //bl
             if (zone == 1){
@@ -631,54 +992,256 @@ public class AutoMeat2 extends LinearOpMode
                 drive.followTrajectorySequence(blueLeft1p2);
                 inMotor.setPower(-.5);
                 drive.followTrajectorySequence(blueLeft1p3);
-                outMotor.setTargetPosition(outDropPos);
             } else if (zone == 2) {
                 //drive.followTrajectory(redRight2p1);
                 drive.followTrajectorySequence(blueLeft2p1);
                 drive.followTrajectorySequence(blueLeft2p2);
                 inMotor.setPower(-.5);
                 drive.followTrajectorySequence(blueLeft2p3);
-                outMotor.setTargetPosition(outDropPos);
 
             } else {
                 drive.followTrajectorySequence(blueLeft3p1);
                 drive.followTrajectorySequence(blueLeft3p2);
                 inMotor.setPower(-.5);
                 drive.followTrajectorySequence(blueLeft3p3);
-                outMotor.setTargetPosition(outDropPos);
             }
+            //lineUpWithSensors(drive,52.5, .25);
+            outMotor.setTargetPosition(outDropPos);
             sleep(1000);
-            upMotor.setTargetPosition(upRedyPos);
+            //upMotor.setTargetPosition(upRedyPos);
             outMotor.setTargetPosition(outLoadPos);
+
+            if (parkFar) {
+                if (zone == 1){
+                    drive.followTrajectorySequence(blue1p5far);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(blue2p5far);
+                } else {
+                    drive.followTrajectorySequence(blue3p5far);
+                }
+            } else {
+                if (zone == 1){
+                    drive.followTrajectorySequence(blue1p5close);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(blue2p5close);
+                } else {
+                    drive.followTrajectorySequence(blue3p5close);
+                }
+            }
 //This is for the movement of the robot on the blue side.
         } else if (program == 2) {
             //br
             if (zone == 1){
-                drive.followTrajectorySequence(redRight1p1);
-                drive.followTrajectorySequence(redRight1p2);
+                telemetry.addData("x", drive.getPoseEstimate().getX());
+                telemetry.addData("Y", drive.getPoseEstimate().getY());
+                telemetry.addData("A", drive.getPoseEstimate().getHeading());
+                telemetry.update();
+                drive.followTrajectorySequence(BlueRight1p1);
+                telemetry.addData("x", drive.getPoseEstimate().getX());
+                telemetry.addData("Y", drive.getPoseEstimate().getY());
+                telemetry.addData("A", drive.getPoseEstimate().getHeading());
+                telemetry.update();
+                upMotor.setTargetPosition(50);
+                upMotor.setVelocity(250);
+                drive.followTrajectorySequence(BlueRight1p2);
+                telemetry.addData("x", drive.getPoseEstimate().getX());
+                telemetry.addData("Y", drive.getPoseEstimate().getY());
+                telemetry.addData("A", drive.getPoseEstimate().getHeading());
+                telemetry.update();
             } else if (zone == 2) {
                 //drive.followTrajectory(redRight2p1);
-                drive.followTrajectorySequence(redRight2p1);
-                drive.followTrajectorySequence(redRight2p2);
+                drive.followTrajectorySequence(BlueRight2p1);
+                upMotor.setTargetPosition(50);
+                upMotor.setVelocity(250);
+                drive.followTrajectorySequence(BlueRight2p2);
 
             } else {
-                drive.followTrajectorySequence(redRight3p1);
-                drive.followTrajectorySequence(redRight3p2);
+                drive.followTrajectorySequence(BlueRight3p1);
+                upMotor.setTargetPosition(50);
+                upMotor.setVelocity(250);
+                drive.followTrajectorySequence(BlueRight3p2);
             }
+            if (farePath){
+                drive.followTrajectorySequence(BlueRightp3far);
+                if (wate1 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate1 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                upMotor.setTargetPosition(200);
+                upMotor.setVelocity(350);
+                drive.followTrajectorySequence(BlueRightp3v2far);
+                if (wate2 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate2 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                if (zone == 1){
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(BlueRight1p4far);
 
+                } else if (zone == 2) {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(BlueRight2p4far);
+
+                } else {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(BlueRight3p4far);
+                }
+            } else {
+                drive.followTrajectorySequence(BlueRightp3close);
+                if (wate1 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate1 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                upMotor.setTargetPosition(200);
+                upMotor.setVelocity(350);
+                drive.followTrajectorySequence(BlueRightp3v2close);
+                if (wate2 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate2 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                if (zone == 1){
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(BlueRight1p4close);
+                } else if (zone == 2) {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(BlueRight2p4close);
+                } else {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(BlueRight3p4close);
+                }
+            }
+            //lineUpWithSensors(drive,47.25, .25);
+            outMotor.setTargetPosition(outDropPos);
+            sleep(1000);
+            outMotor.setTargetPosition(0);
+            if (parkFar) {
+                if (zone == 1){
+                    drive.followTrajectorySequence(blue1p5far);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(blue2p5far);
+                } else {
+                    drive.followTrajectorySequence(blue3p5far);
+                }
+            } else {
+                if (zone == 1){
+                    drive.followTrajectorySequence(blue1p5close);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(blue2p5close);
+                } else {
+                    drive.followTrajectorySequence(blue3p5close);
+                }
+            }
         } else if (program == 3) {
             //rl
             if (zone == 1){
-                drive.followTrajectorySequence(blueLeft1p1);
-                drive.followTrajectorySequence(blueLeft1p2);
+                drive.followTrajectorySequence(redLeft1p1);
+                upMotor.setTargetPosition(50);
+                upMotor.setVelocity(250);
+                drive.followTrajectorySequence(redLeft1p2);
             } else if (zone == 2) {
                 //drive.followTrajectory(redRight2p1);
-                drive.followTrajectorySequence(blueLeft2p1);
-                drive.followTrajectorySequence(blueLeft2p2);
+                drive.followTrajectorySequence(redLeft2p1);
+                upMotor.setTargetPosition(50);
+                upMotor.setVelocity(250);
+                drive.followTrajectorySequence(redLeft2p2);
 
             } else {
-                drive.followTrajectorySequence(blueLeft3p1);
-                drive.followTrajectorySequence(blueLeft3p2);
+                drive.followTrajectorySequence(redLeft3p1);
+                upMotor.setTargetPosition(50);
+                upMotor.setVelocity(250);
+                drive.followTrajectorySequence(redLeft3p2);
+            }
+            if (farePath){
+                drive.followTrajectorySequence(redLeftp3far);
+                if (wate1 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate1 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                upMotor.setTargetPosition(200);
+                upMotor.setVelocity(350);
+                drive.followTrajectorySequence(redLeftp3v2far);
+                if (wate2 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate2 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                if (zone == 1){
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(redLeft1p4far);
+                } else if (zone == 2) {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(redLeft2p4far);
+                } else {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(redLeft3p4far);
+                }
+            } else {
+                drive.followTrajectorySequence(redLeftp3close);
+                if (wate1 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate1 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                upMotor.setTargetPosition(200);
+                upMotor.setVelocity(350);
+                drive.followTrajectorySequence(redLeftp3v2close);
+                if (wate2 - runtime.milliseconds() > 0 ) {
+                    try {
+                        Thread.sleep( wate2 -  (long)runtime.milliseconds());
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                if (zone == 1){
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(redLeft1p4close);
+                } else if (zone == 2) {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(redLeft2p4close);
+                } else {
+                    inMotor.setPower(-.5);
+                    drive.followTrajectorySequence(redLeft3p4close);
+                }
+            }
+            //lineUpWithSensors(drive,47.25, .25);
+            outMotor.setTargetPosition(outDropPos);
+            sleep(1000);
+            outMotor.setTargetPosition(0);
+            if (parkFar) {
+                if (zone == 1){
+                    drive.followTrajectorySequence(red1p5far);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(red2p5far);
+                } else {
+                    drive.followTrajectorySequence(red3p5far);
+                }
+            } else {
+                if (zone == 1){
+                    drive.followTrajectorySequence(red1p5close);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(red2p5close);
+                } else {
+                    drive.followTrajectorySequence(red3p5close);
+                }
             }
         } else {
             //rr
@@ -687,24 +1250,42 @@ public class AutoMeat2 extends LinearOpMode
                 drive.followTrajectorySequence(redRight1p2);
                 inMotor.setPower(-.5);
                 drive.followTrajectorySequence(redRight1p3);
-                outMotor.setTargetPosition(outDropPos);
             } else if (zone == 2) {
                 //drive.followTrajectory(redRight2p1);
                 drive.followTrajectorySequence(redRight2p1);
                 drive.followTrajectorySequence(redRight2p2);
                 inMotor.setPower(-.5);
                 drive.followTrajectorySequence(redRight2p3);
-                outMotor.setTargetPosition(outDropPos);
             } else {
                 drive.followTrajectorySequence(redRight3p1);
                 drive.followTrajectorySequence(redRight3p2);
                 inMotor.setPower(-.5);
                 drive.followTrajectorySequence(redRight3p3);
-                outMotor.setTargetPosition(outDropPos);
             }
+            //lineUpWithSensors(drive,52.5, .25);
+            outMotor.setTargetPosition(outDropPos);
             sleep(1000);
-            upMotor.setTargetPosition(upRedyPos);
+            //.setTargetPosition(upRedyPos);
             outMotor.setTargetPosition(outLoadPos);
+
+            if (parkFar) {
+                if (zone == 1){
+                    drive.followTrajectorySequence(red1p5far);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(red2p5far);
+                } else {
+                    drive.followTrajectorySequence(red3p5far);
+                }
+            } else {
+                if (zone == 1){
+                    drive.followTrajectorySequence(red1p5close);
+                } else if (zone == 2) {
+                    drive.followTrajectorySequence(red2p5close);
+                } else {
+                    drive.followTrajectorySequence(red3p5close);
+                }
+            }
+
         }
 //This is for the movement of the robot on the red side.
         PoseStorage.currentPose = drive.getPoseEstimate();
@@ -873,6 +1454,19 @@ public class AutoMeat2 extends LinearOpMode
         telemetry.addLine(String.format("Rotation Yaw: %.2f degrees", rot.firstAngle));
         telemetry.addLine(String.format("Rotation Pitch: %.2f degrees", rot.secondAngle));
         telemetry.addLine(String.format("Rotation Roll: %.2f degrees", rot.thirdAngle));
+    }
+
+    public void lineUpWithSensors(SampleMecanumDrive drive,double target2, double untilErr) {
+        target = target2;
+        ldis = sensorDistanceL.getDistance(DistanceUnit.INCH);
+        rdis = sensorDistanceR.getDistance(DistanceUnit.INCH);
+        //target - ((ldis - Ltarget)+ (rdis - Rtarget))/2
+        while (((ldis - Ltarget)+ (rdis - Rtarget))/2 > untilErr){
+            lineupY = target - ((ldis - Ltarget)+ (rdis - Rtarget))/2;
+            drive.followTrajectorySequence(lineupMove);
+            ldis = sensorDistanceL.getDistance(DistanceUnit.INCH);
+            rdis = sensorDistanceR.getDistance(DistanceUnit.INCH);
+        }
     }
 }
 //It shows the location of the Tag.

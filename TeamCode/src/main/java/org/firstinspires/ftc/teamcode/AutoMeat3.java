@@ -93,9 +93,9 @@ import java.util.concurrent.TimeUnit;
  *
  */
 
-@Autonomous(name="Auto Meat 2", group = "A")
+@Autonomous(name="Auto Meat 3", group = "A")
 @Disabled
-public class AutoMeat2 extends LinearOpMode
+public class AutoMeat3 extends LinearOpMode
 {
 
     // Adjust these numbers to suit your robot.
@@ -120,7 +120,7 @@ public class AutoMeat2 extends LinearOpMode
     private DcMotor inMotor = null;
     private DcMotor outMotor = null;
     private DcMotor graberMotor = null;
-    private DcMotor upMotor = null;
+    //private DcMotor upMotor = null;
 
     public Servo shooter;
 
@@ -165,7 +165,7 @@ public class AutoMeat2 extends LinearOpMode
         int grabDownPos = 0;
 
         int outLoadPos = 0;
-        int outDropPos = -600;
+        int outDropPos = -580;
         int outLineupPos = -250;
 
         int upRedyPos = 419;
@@ -173,7 +173,7 @@ public class AutoMeat2 extends LinearOpMode
         inMotor = hardwareMap.get(DcMotor.class, "in");
         outMotor = hardwareMap.get(DcMotor.class, "out");
         graberMotor = hardwareMap.get(DcMotor.class, "grab");
-        upMotor = hardwareMap.get(DcMotor.class, "up");
+        //upMotor = hardwareMap.get(DcMotor.class, "up");
 
         inMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         outMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -187,8 +187,8 @@ public class AutoMeat2 extends LinearOpMode
         outMotor.setTargetPosition(outLoadPos);
         outMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        upMotor.setTargetPosition(upStartPos);
-        upMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        //upMotor.setTargetPosition(upStartPos);
+        //pMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
         graberMotor.setTargetPosition(grabCamPos);
         graberMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -612,15 +612,17 @@ public class AutoMeat2 extends LinearOpMode
 
         if (program == 1 || program == 2) {
             //Blue
+            PoseStorage.redSide = false;
             zone = aprilTagDetectionPipeline.getTargetZone(1);
         } else {
             //Red
             zone = aprilTagDetectionPipeline.getTargetZone(0);
+            PoseStorage.redSide = true;
         }
         //shooter.setPosition(.75);
         ((DcMotorEx) graberMotor).setVelocity(10000);
         outMotor.setPower(.6);
-        upMotor.setPower(1);
+        //upMotor.setPower(1);
         graberMotor.setTargetPosition(grabDownPos);
 //This tells the robot to look for the red or the blue prop.
 
@@ -648,7 +650,7 @@ public class AutoMeat2 extends LinearOpMode
                 outMotor.setTargetPosition(outDropPos);
             }
             sleep(1000);
-            upMotor.setTargetPosition(upRedyPos);
+            //upMotor.setTargetPosition(upRedyPos);
             outMotor.setTargetPosition(outLoadPos);
 //This is for the movement of the robot on the blue side.
         } else if (program == 2) {
@@ -703,7 +705,7 @@ public class AutoMeat2 extends LinearOpMode
                 outMotor.setTargetPosition(outDropPos);
             }
             sleep(1000);
-            upMotor.setTargetPosition(upRedyPos);
+            //.setTargetPosition(upRedyPos);
             outMotor.setTargetPosition(outLoadPos);
         }
 //This is for the movement of the robot on the red side.

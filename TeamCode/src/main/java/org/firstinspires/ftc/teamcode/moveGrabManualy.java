@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@TeleOp
+@TeleOp(name="moveGrabManualy", group = "b")
 
 public class moveGrabManualy extends LinearOpMode {
     public static DcMotor grabModer;

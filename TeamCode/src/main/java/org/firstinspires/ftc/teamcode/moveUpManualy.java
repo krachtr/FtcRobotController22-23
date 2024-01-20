@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@TeleOp
+@TeleOp(name="moveUpManualy", group = "b")
 
 public class moveUpManualy extends LinearOpMode {
     public static DcMotor upMotor;
@@ -27,7 +27,7 @@ public class moveUpManualy extends LinearOpMode {
         if (opModeIsActive()) {
             // Put run blocks here.
             while (opModeIsActive()) {
-                upMotor.setPower(-gamepad1.right_stick_y);
+                upMotor.setPower(-gamepad1.right_stick_y*.2);
                 telemetry.addData("grab pos", upMotor.getCurrentPosition());
                 telemetry.update();
             }
