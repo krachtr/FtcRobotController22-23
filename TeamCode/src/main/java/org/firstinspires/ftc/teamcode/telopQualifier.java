@@ -30,6 +30,8 @@ public class telopQualifier extends LinearOpMode {
 
     public Servo shooter;
 
+    public Servo unStacker;
+
     private DistanceSensor sensorDistanceL;
     private DistanceSensor sensorDistanceR;
 
@@ -89,6 +91,8 @@ public class telopQualifier extends LinearOpMode {
 
 
         shooter = hardwareMap.get(Servo.class, "shooter");
+        unStacker = hardwareMap.get(Servo.class, "stack");
+
         //initializing all the motors.
 
 
@@ -180,6 +184,12 @@ public class telopQualifier extends LinearOpMode {
                     BIsPressed = false;
                 }
 
+                if (gamepad1.dpad_up){
+                    unStacker.setPosition(1);
+                } else if (gamepad1.dpad_down) {
+                    unStacker.setPosition(0);
+                }
+
                 if (xDown && !XIsPressed){
                     XIsPressed = true;
                     if (driveSpeed==1){
@@ -204,7 +214,7 @@ public class telopQualifier extends LinearOpMode {
                 if (yDown && !YIsPressed){
                     YIsPressed = true;
                     if (outModer.getTargetPosition()==outLoadPos){
-                        outModer.setPower(.55);
+                        outModer.setPower(.50);
                         outModer.setTargetPosition(outDropPos);
                     } else {
                         outModer.setPower(.4);
