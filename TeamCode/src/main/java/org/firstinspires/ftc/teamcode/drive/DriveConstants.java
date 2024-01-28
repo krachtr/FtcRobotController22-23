@@ -46,7 +46,7 @@ public class DriveConstants {
      */
     public static double WHEEL_RADIUS = 2.45; //45.0 / 25.4; // in
     public static double GEAR_RATIO = 0.05; // output (wheel) speed / input (motor) speed
-    public static double TRACK_WIDTH = 12.95; // in
+    public static double TRACK_WIDTH = 12.95; //this is 12.95 for our qualifier robot
 
     /*
      * These are the feedforward parameters used to model the drive motor behavior. If you are using
