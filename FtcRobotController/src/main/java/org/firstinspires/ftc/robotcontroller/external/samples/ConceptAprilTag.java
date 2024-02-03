@@ -42,6 +42,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase;
 import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
+
 import java.util.List;
 import java.util.Vector;
 
@@ -164,6 +165,17 @@ public class ConceptAprilTag extends LinearOpMode {
         } else {
             builder.setCamera(BuiltinCameraDirection.BACK);
         }
+
+        /*  see https://ftc-docs.firstinspires.org/en/latest/apriltag/vision_portal/visionportal_init/visionportal-init.html
+            for other options of creating the vision portal
+            cpu management: https://ftc-docs.firstinspires.org/en/latest/apriltag/vision_portal/visionportal_cpu_and_bandwidth/visionportal-cpu-and-bandwidth.html
+
+            should: builder.enableLiveView(false)?
+                    myVisionPortal.stopStreaming();
+                    myVisionPortal.close();
+         */
+
+
 
         // Choose a camera resolution. Not all cameras support all resolutions.
         //builder.setCameraResolution(new Size(640, 480));
